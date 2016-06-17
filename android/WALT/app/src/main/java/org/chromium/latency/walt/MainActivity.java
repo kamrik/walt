@@ -18,6 +18,7 @@ package org.chromium.latency.walt;
 
 import android.Manifest;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
@@ -33,6 +34,7 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -55,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
     private SimpleLogger logger;
     private ClockManager clockManager;
     public Menu mMenu;
+    private SharedPreferences prefs;
 
     public Handler handler = new Handler();
 
@@ -121,6 +124,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         Thread.setDefaultUncaughtExceptionHandler(new LoggingExceptionHandler());
         setContentView(R.layout.activity_main);
+
+        // Preferences
+        // setDefaultValues only has effect the first time application starts
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
 
         // App bar
         toolbar = (Toolbar) findViewById(R.id.toolbar_main);
@@ -237,6 +246,11 @@ public class MainActivity extends AppCompatActivity {
         LogFragment logFragment = new LogFragment();
         // mMenu.findItem(R.id.action_help).setVisible(false);
         switchScreen(logFragment, "Log");
+    }
+
+    public void onClickPrefs(View view) {
+        PrefsFragment newFragment = new PrefsFragment();
+        switchScreen(newFragment, "Settings");
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

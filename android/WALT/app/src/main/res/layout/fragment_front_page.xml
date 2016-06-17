@@ -223,7 +223,7 @@
             <!-- Settings -->
             <LinearLayout
                 style="@style/MenuItemStyle"
-                android:onClick="onClickOpenLog">
+                android:onClick="onClickPrefs">
 
                 <ImageView
                     style="@style/MenuIconStyle"

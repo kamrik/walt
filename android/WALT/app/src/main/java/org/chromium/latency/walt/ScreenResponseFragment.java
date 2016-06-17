@@ -21,10 +21,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.preference.PreferenceManager;
 import android.text.method.ScrollingMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -43,6 +45,7 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
     private ClockManager clockManager;
     private Handler handler = new Handler();
     private LocalBroadcastManager broadcastManager;
+    private SharedPreferences prefs;
     TextView mBlackBox;
     int timesToBlink = 20; // TODO: load this from settings
     int mInitiatedBlinks = 0;
@@ -63,6 +66,7 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
         clockManager = ClockManager.getInstance(getContext());
         logger = SimpleLogger.getInstance(getContext());
         broadcastManager = LocalBroadcastManager.getInstance(getContext());
+        prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_screen_response, container, false);
     }
@@ -77,6 +81,9 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
         // Register this fragment class as the listener for some button clicks
         activity.findViewById(R.id.button_restart_screen_response).setOnClickListener(this);
         activity.findViewById(R.id.button_start_screen_response).setOnClickListener(this);
+
+        timesToBlink = Integer.parseInt(prefs.getString("pref_screen_reps", "21"));
+        logger.log("timesToBlink=" + timesToBlink);
     }
 
 
