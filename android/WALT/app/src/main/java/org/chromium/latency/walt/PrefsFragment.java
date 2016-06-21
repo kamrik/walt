@@ -2,8 +2,8 @@ package org.chromium.latency.walt;
 
 
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.preference.EditTextPreference;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
 
@@ -22,23 +22,26 @@ public class PrefsFragment extends PreferenceFragmentCompat {
         addPreferencesFromResource(R.xml.preferences);
 
         //
-        EditTextPreference pref_timesToBlink = (EditTextPreference) getPreferenceScreen().findPreference("pref_screen_reps");
+        NumberPickerPreference pref_timesToBlink = (NumberPickerPreference) getPreferenceScreen().findPreference("pref_screen_reps");
 
         pref_timesToBlink.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
-                Boolean rtnval = true;
-                if (newValue == "") {
-                    final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                    builder.setTitle("Invalid Input");
-                    builder.setMessage("Must be a valid number");
-                    builder.setPositiveButton(android.R.string.ok, null);
-                    builder.show();
-                    rtnval = false;
-                }
-                return rtnval;
+                return true;
             }
         });
     }
 
+    @Override
+    public void onDisplayPreferenceDialog(Preference preference) {
+        if (preference instanceof NumberPickerPreference) {
+            DialogFragment fragment = NumberPickerPreference.
+                    NumberPickerPreferenceDialogFragmentCompat.newInstance(preference.getKey());
+            fragment.setTargetFragment(this, 0);
+            fragment.show(getFragmentManager(),
+                    "android.support.v7.preference.PreferenceFragment.DIALOG");
+        } else {
+            super.onDisplayPreferenceDialog(preference);
+        }
+    }
 }

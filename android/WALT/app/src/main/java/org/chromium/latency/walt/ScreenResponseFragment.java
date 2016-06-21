@@ -82,7 +82,7 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
         activity.findViewById(R.id.button_restart_screen_response).setOnClickListener(this);
         activity.findViewById(R.id.button_start_screen_response).setOnClickListener(this);
 
-        timesToBlink = Integer.parseInt(prefs.getString("pref_screen_reps", "21"));
+        timesToBlink = prefs.getInt("pref_screen_reps", 21);
         logger.log("timesToBlink=" + timesToBlink);
     }
 
