@@ -26,6 +26,7 @@ public class HistogramChart extends BarChart {
     public float binSize = 1;
 
     private int nSets = 1;  // How many datasets = histograms to draw, it's either 1 or 2.
+    private float yMax = 0;
 
     private int nBins;
     private BarEntry[][] dataEntries;
@@ -71,11 +72,18 @@ public class HistogramChart extends BarChart {
             e = dataEntries[dataSetIndex][bin] = new BarEntry(x, 1);
             mData.addEntry(e, dataSetIndex);
         } else {
-            e.setY(e.getY() + 1);
+            float yNew = e.getY() + 1;
+            e.setY(yNew);
+            if (yNew > yMax) {
+                yMax = e.getY();
+            }
+
         }
 
         mData.notifyDataChanged();
         notifyDataSetChanged();
+        getAxisLeft().setAxisMaxValue(yMax + 1);
+        invalidate();
     }
 
     public void addDataSet(String lable) {
@@ -86,6 +94,7 @@ public class HistogramChart extends BarChart {
         mData.setBarWidth(barWidth);
         ArrayList<BarEntry> entries = new ArrayList<BarEntry>();
         BarDataSet dataSet = new BarDataSet(entries, lable);
+        dataSet.setValueFormatter(new DefaultValueFormatter(0)); // 0 decimal digits
         dataSet.setColor(ColorTemplate.MATERIAL_COLORS[0]);
         dataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
         mData.addDataSet(dataSet);
@@ -93,11 +102,8 @@ public class HistogramChart extends BarChart {
 
     private void initHistogram() {
         mData = new BarData();
-        mData.setValueFormatter(new DefaultValueFormatter(0)); // 0 decimal digits
 
-
-        YAxis rightAxis = getAxisRight();
-        rightAxis.setEnabled(false);
+        getAxisRight().setEnabled(false);
 
         Legend l = getLegend();
         l.setPosition(Legend.LegendPosition.ABOVE_CHART_LEFT);
@@ -106,6 +112,15 @@ public class HistogramChart extends BarChart {
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setGranularityEnabled(true);
         xAxis.setGranularity(1.0f);
+
+        YAxis yAxis = getAxisLeft();
+        yAxis.setGranularityEnabled(true);
+        yAxis.setGranularity(1.0f);
+
+
+        xAxis.setAxisMinValue(min);
+        xAxis.setAxisMaxValue(max);
+
 
         setDescription("Latency [ms]");
 

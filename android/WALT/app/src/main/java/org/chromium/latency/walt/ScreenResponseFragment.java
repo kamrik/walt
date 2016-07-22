@@ -42,7 +42,8 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
     private ClockManager clockManager;
     private Handler handler = new Handler();
     TextView mBlackBox;
-    int timesToBlink = 20; // TODO: load this from settings
+    HistogramChart mChart;
+    int timesToBlink = 100; // TODO: load this from settings
     int mInitiatedBlinks = 0;
     int mDetectedBlinks = 0;
     boolean mIsBoxWhite = false;
@@ -71,7 +72,8 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
         super.onResume();
         // restartMeasurement();
         mBlackBox = (TextView) activity.findViewById(R.id.txt_black_box_screen);
-
+        mChart = (HistogramChart) activity.findViewById(R.id.screen_response_chart);
+        mChart.addDataSet("Screen response");
 
         // Register this fragment class as the listener for some button clicks
         activity.findViewById(R.id.button_restart_screen_response).setOnClickListener(this);
@@ -83,6 +85,9 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
     void startMeasurement() {
         // TODO: Add a stop button to interrupt the measurement
         deltas.clear();
+
+        // TODO: Clear chart data
+        // mChart.addDataSet("Screen response");
 
         try {
             clockManager.syncClock();
@@ -180,6 +185,7 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
 
             double dt = (tmsg.t - mLastFlipTime) / 1000.;
             deltas.add(dt);
+            mChart.addDataPoint(dt, 0);
 
             // Schedule another blink soon-ish
             handler.postDelayed(doBlinkRunnable, 50); // TODO: randomize the delay
@@ -210,11 +216,11 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
         mBlackBox.setBackgroundColor(color_gray);
 
         // Show histogram of the results
-        int [] hist = Utils.histogram(deltas, 0, 120, 1.0);
-        String histLable = String.format("N=%d, median=%.1f ms", deltas.size() , medianDelta);
-        HistogramFragment histogramFragment = new HistogramFragment();
-        histogramFragment.addHist(hist, histLable);
-        activity.switchScreen(histogramFragment, "Screen response stats");
+//        int [] hist = Utils.histogram(deltas, 0, 120, 1.0);
+//        String histLable = String.format("N=%d, median=%.1f ms", deltas.size() , medianDelta);
+//        HistogramFragment histogramFragment = new HistogramFragment();
+//        histogramFragment.addHist(hist, histLable);
+//        activity.switchScreen(histogramFragment, "Screen response stats");
     }
 
     @Override
