@@ -22,6 +22,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.text.method.ScrollingMovementMethod;
+import android.view.Choreographer;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -41,13 +42,16 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
     private SimpleLogger logger;
     private WaltDevice waltDevice;
     private Handler handler = new Handler();
-    TextView mBlackBox;
-    int timesToBlink = 20; // TODO: load this from settings
+    private TextView mBlackBox;
+    private Choreographer choreographer;
+    int timesToBlink = 100; // TODO: load this from settings
     int mInitiatedBlinks = 0;
     int mDetectedBlinks = 0;
     boolean mIsBoxWhite = false;
     long mLastFlipTime;
+    long mLastDrawTime = 0;
     ArrayList<Double> deltas = new ArrayList<>();
+    ArrayList<Double> deltasSet2Draw = new ArrayList<>();
     private static final int color_gray = Color.argb(0xFF, 0xBB, 0xBB, 0xBB);
     private StringBuilder brightnessCurveData = new StringBuilder();
 
@@ -71,7 +75,7 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
         super.onResume();
         // restartMeasurement();
         mBlackBox = (TextView) activity.findViewById(R.id.txt_black_box_screen);
-
+        choreographer = Choreographer.getInstance();
 
         // Register this fragment class as the listener for some button clicks
         activity.findViewById(R.id.button_restart_screen_response).setOnClickListener(this);
@@ -142,6 +146,13 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
             mInitiatedBlinks++;
             mBlackBox.setBackgroundColor(nextColor);
             mLastFlipTime = waltDevice.clock.micros(); // TODO: is this the right time to save?
+            mLastDrawTime = 0;
+            choreographer.postFrameCallback(new Choreographer.FrameCallback() {
+                @Override
+                public void doFrame(long frameTimeNanos) {
+                    mLastDrawTime = frameTimeNanos / 1000 - waltDevice.clock.baseTime;
+                }
+            });
 
 
             // Repost doBlink to some far away time to blink again even if nothing arrives from
@@ -171,8 +182,9 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
                 }
             }
 
-            double dt = (tmsg.t - mLastFlipTime) / 1000.;
+            double dt = (tmsg.t - mLastDrawTime) / 1000.;
             deltas.add(dt);
+            deltasSet2Draw.add( (mLastDrawTime - mLastFlipTime) / 1000.);
 
             // Schedule another blink soon-ish
             handler.postDelayed(doBlinkRunnable, 50); // TODO: randomize the delay
@@ -192,6 +204,7 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
 
         waltDevice.checkDrift();
 
+        logger.log("set2draw: " + deltasSet2Draw.toString());
         // Show deltas and the median
         logger.log("deltas: " + deltas.toString());
         logger.log(String.format(
