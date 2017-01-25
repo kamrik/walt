@@ -43,7 +43,7 @@
         </RelativeLayout>
 
         <!-- The big box that flickers between black and white -->
-        <TextView
+        <org.chromium.latency.walt.TimedTextView
             android:id="@+id/txt_black_box_screen"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

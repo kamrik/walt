@@ -30,6 +30,7 @@ import android.widget.TextView;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Locale;
 
 /**
  * Measurement of screen response time when switching between black and white.
@@ -42,7 +43,7 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
     private SimpleLogger logger;
     private WaltDevice waltDevice;
     private Handler handler = new Handler();
-    private TextView mBlackBox;
+    private TimedTextView mBlackBox;
     private Choreographer choreographer;
     int timesToBlink = 100; // TODO: load this from settings
     int mInitiatedBlinks = 0;
@@ -50,6 +51,8 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
     boolean mIsBoxWhite = false;
     long mLastFlipTime;
     long mLastDrawTime = 0;
+    long mLastDrawTimeFloor;
+    long mLastFrameCallbackTime = 0;
     ArrayList<Double> deltas = new ArrayList<>();
     ArrayList<Double> deltasSet2Draw = new ArrayList<>();
     private static final int color_gray = Color.argb(0xFF, 0xBB, 0xBB, 0xBB);
@@ -74,7 +77,7 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
     public void onResume() {
         super.onResume();
         // restartMeasurement();
-        mBlackBox = (TextView) activity.findViewById(R.id.txt_black_box_screen);
+        mBlackBox = (TimedTextView) activity.findViewById(R.id.txt_black_box_screen);
         choreographer = Choreographer.getInstance();
 
         // Register this fragment class as the listener for some button clicks
@@ -147,10 +150,13 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
             mBlackBox.setBackgroundColor(nextColor);
             mLastFlipTime = waltDevice.clock.micros(); // TODO: is this the right time to save?
             mLastDrawTime = 0;
+            mBlackBox.takeTimes = true;
             choreographer.postFrameCallback(new Choreographer.FrameCallback() {
                 @Override
                 public void doFrame(long frameTimeNanos) {
                     mLastDrawTime = frameTimeNanos / 1000 - waltDevice.clock.baseTime;
+                    mLastDrawTimeFloor = (frameTimeNanos / 1000000) * 1000 - waltDevice.clock.baseTime;
+                    mLastFrameCallbackTime = System.nanoTime() / 1000 - waltDevice.clock.baseTime;
                 }
             });
 
@@ -184,6 +190,28 @@ public class ScreenResponseFragment extends Fragment implements View.OnClickList
 
             double dt = (tmsg.t - mLastDrawTime) / 1000.;
             deltas.add(dt);
+
+
+            // Explore where all the other events happen in time
+            long t0us = mLastDrawTime; // Frame start time in Choreographer cb.
+
+            long tFlip = mLastFlipTime - t0us;  // in most cases negative
+            long toChoreographerFrameStart = mLastDrawTime - t0us; // 0
+            long toChoreographerCallback = mLastFrameCallbackTime - t0us;
+            long toViewFrameStart = mBlackBox.frameStartTime - waltDevice.clock.baseTime - t0us;
+            long toViewDraw = mBlackBox.drawTime - waltDevice.clock.baseTime - t0us;
+            long toPhysicalChange = tmsg.t - t0us;
+            logger.log(String.format(Locale.US,
+                    "flip:%d chFS:%d chCB:%d vFS:%d vOnDraw:%d phys:%d white:%d",
+                    tFlip,
+                    toChoreographerFrameStart,
+                    toChoreographerCallback,
+                    toViewFrameStart,
+                    toViewDraw,
+                    toPhysicalChange,
+                    mIsBoxWhite? 1: 0
+            ));
+
             deltasSet2Draw.add( (mLastDrawTime - mLastFlipTime) / 1000.);
 
             // Schedule another blink soon-ish
